@@ -6,35 +6,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/CTokenInterface.sol";
+import "./interfaces/ComptrollerInterface.sol";
 
 contract CTokenHelper is Ownable {
     using SafeERC20 for IERC20;
+
+    ComptrollerInterface public immutable comptroller;
 
     /**
      * @notice Emitted when tokens are seized
      */
     event TokenSeized(address token, uint256 amount);
 
-    /**
-     * @notice Emitted when users call mintBorrow
-     */
-    event MintBorrow(
-        CTokenInterface cTokenMint,
-        uint256 mintAmount,
-        CTokenInterface cTokenBorrow,
-        uint256 borrowAmount
-    );
-
-    /**
-     * @notice Emitted when users call repayRedeem
-     */
-    event RepayRedeem(
-        CTokenInterface cTokenRepay,
-        uint256 repayAmount,
-        CTokenInterface cTokenRedeem,
-        uint256 redeemTokens,
-        uint256 redeemAmount
-    );
+    constructor(ComptrollerInterface _comptroller) {
+        comptroller = _comptroller;
+    }
 
     /**
      * @notice The sender mints and borrows.
@@ -49,6 +35,33 @@ contract CTokenHelper is Ownable {
         CTokenInterface cTokenBorrow,
         uint256 borrowAmount
     ) external {
+        require(
+            comptroller.isMarketListed(address(cTokenMint)) &&
+                comptroller.isMarketListed(address(cTokenBorrow)),
+            "market not list"
+        );
+        _mint(cTokenMint, mintAmount);
+
+        require(
+            cTokenBorrow.borrow(payable(msg.sender), borrowAmount) == 0,
+            "borrow failed"
+        );
+    }
+
+    /**
+     * @notice The sender mints.
+     * @param cTokenMint The market that user wants to mint
+     * @param mintAmount The mint amount
+     */
+    function mint(CTokenInterface cTokenMint, uint256 mintAmount) external {
+        require(
+            comptroller.isMarketListed(address(cTokenMint)),
+            "market not list"
+        );
+        _mint(cTokenMint, mintAmount);
+    }
+
+    function _mint(CTokenInterface cTokenMint, uint256 mintAmount) internal {
         address underlying = cTokenMint.underlying();
 
         // Get funds from user.
@@ -61,12 +74,6 @@ contract CTokenHelper is Ownable {
         // Mint and borrow.
         IERC20(underlying).approve(address(cTokenMint), mintAmount);
         require(cTokenMint.mint(msg.sender, mintAmount) == 0, "mint failed");
-        require(
-            cTokenBorrow.borrow(payable(msg.sender), borrowAmount) == 0,
-            "borrow failed"
-        );
-
-        emit MintBorrow(cTokenMint, mintAmount, cTokenBorrow, borrowAmount);
     }
 
     /**
@@ -84,6 +91,37 @@ contract CTokenHelper is Ownable {
         uint256 redeemTokens,
         uint256 redeemAmount
     ) external {
+        require(
+            comptroller.isMarketListed(address(cTokenRepay)) &&
+                comptroller.isMarketListed(address(cTokenRedeem)),
+            "market not list"
+        );
+        _repay(cTokenRepay, repayAmount);
+
+        require(
+            cTokenRedeem.redeem(
+                payable(msg.sender),
+                redeemTokens,
+                redeemAmount
+            ) == 0,
+            "redeem failed"
+        );
+    }
+
+    /**
+     * @notice The sender repays.
+     * @param cTokenRepay The market that user wants to repay
+     * @param repayAmount The repay amount
+     */
+    function repay(CTokenInterface cTokenRepay, uint256 repayAmount) external {
+        require(
+            comptroller.isMarketListed(address(cTokenRepay)),
+            "market not list"
+        );
+        _repay(cTokenRepay, repayAmount);
+    }
+
+    function _repay(CTokenInterface cTokenRepay, uint256 repayAmount) internal {
         address underlying = cTokenRepay.underlying();
 
         // Get funds from user.
@@ -98,22 +136,6 @@ contract CTokenHelper is Ownable {
         require(
             cTokenRepay.repayBorrow(msg.sender, repayAmount) == 0,
             "repay failed"
-        );
-        require(
-            cTokenRedeem.redeem(
-                payable(msg.sender),
-                redeemTokens,
-                redeemAmount
-            ) == 0,
-            "redeem failed"
-        );
-
-        emit RepayRedeem(
-            cTokenRepay,
-            repayAmount,
-            cTokenRedeem,
-            redeemTokens,
-            redeemAmount
         );
     }
 
