@@ -6,14 +6,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/CTokenInterface.sol";
+import "./interfaces/ComptrollerInterface.sol";
 
 contract CTokenHelper is Ownable {
     using SafeERC20 for IERC20;
+
+    ComptrollerInterface public immutable comptroller;
 
     /**
      * @notice Emitted when tokens are seized
      */
     event TokenSeized(address token, uint256 amount);
+
+    constructor(ComptrollerInterface _comptroller) {
+        comptroller = _comptroller;
+    }
 
     /**
      * @notice The sender mints and borrows.
@@ -28,6 +35,11 @@ contract CTokenHelper is Ownable {
         CTokenInterface cTokenBorrow,
         uint256 borrowAmount
     ) external {
+        require(
+            comptroller.isMarketListed(address(cTokenMint)) &&
+                comptroller.isMarketListed(address(cTokenBorrow)),
+            "market not list"
+        );
         _mint(cTokenMint, mintAmount);
 
         require(
@@ -42,6 +54,10 @@ contract CTokenHelper is Ownable {
      * @param mintAmount The mint amount
      */
     function mint(CTokenInterface cTokenMint, uint256 mintAmount) external {
+        require(
+            comptroller.isMarketListed(address(cTokenMint)),
+            "market not list"
+        );
         _mint(cTokenMint, mintAmount);
     }
 
@@ -75,6 +91,11 @@ contract CTokenHelper is Ownable {
         uint256 redeemTokens,
         uint256 redeemAmount
     ) external {
+        require(
+            comptroller.isMarketListed(address(cTokenRepay)) &&
+                comptroller.isMarketListed(address(cTokenRedeem)),
+            "market not list"
+        );
         _repay(cTokenRepay, repayAmount);
 
         require(
@@ -93,6 +114,10 @@ contract CTokenHelper is Ownable {
      * @param repayAmount The repay amount
      */
     function repay(CTokenInterface cTokenRepay, uint256 repayAmount) external {
+        require(
+            comptroller.isMarketListed(address(cTokenRepay)),
+            "market not list"
+        );
         _repay(cTokenRepay, repayAmount);
     }
 
