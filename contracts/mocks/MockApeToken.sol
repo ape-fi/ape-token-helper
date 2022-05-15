@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/ApeTokenInterface.sol";
 
-contract MockCToken is ERC20, ApeTokenInterface {
+contract MockApeToken is ApeTokenInterface {
     using SafeERC20 for IERC20;
 
+    mapping(address => uint256) private _balance;
     address private _underlying;
     uint256 private _exchangeRate;
     mapping(address => uint256) private _borrowBalance;
@@ -17,8 +17,7 @@ contract MockCToken is ERC20, ApeTokenInterface {
     bool private redeemFailed;
     bool private repayFailed;
 
-    constructor(address underlying_) ERC20("Mock Token", "Mock") {
-        _mint(msg.sender, 10000**uint256(decimals()));
+    constructor(address underlying_) {
         _underlying = underlying_;
     }
 
@@ -42,6 +41,10 @@ contract MockCToken is ERC20, ApeTokenInterface {
         return _borrowBalance[account];
     }
 
+    function balanceOf(address account) external view returns (uint256) {
+        return _balance[account];
+    }
+
     function setMintFailed() external {
         mintFailed = true;
     }
@@ -60,7 +63,7 @@ contract MockCToken is ERC20, ApeTokenInterface {
             mintAmount
         );
         uint256 amount = (mintAmount * _exchangeRate) / 1e18;
-        _mint(minter, amount);
+        _balance[minter] += amount;
         return 0;
     }
 
@@ -70,7 +73,7 @@ contract MockCToken is ERC20, ApeTokenInterface {
         }
 
         uint256 amount = (msg.value * _exchangeRate) / 1e18;
-        _mint(minter, amount);
+        _balance[minter] += amount;
         return 0;
     }
 
@@ -117,12 +120,12 @@ contract MockCToken is ERC20, ApeTokenInterface {
             return 1; // Return non-zero to simulate graceful failure.
         }
 
-        if (redeemTokens != 0) {
+        if (redeemAmount != 0) {
             uint256 tokens = (redeemAmount * _exchangeRate) / 1e18;
-            _burn(redeemer, tokens);
+            _balance[redeemer] -= tokens;
             IERC20(_underlying).safeTransfer(redeemer, redeemAmount);
         } else {
-            _burn(redeemer, redeemTokens);
+            _balance[redeemer] -= redeemTokens;
             uint256 amount = (redeemTokens * 1e18) / _exchangeRate;
             IERC20(_underlying).safeTransfer(redeemer, amount);
         }
@@ -138,12 +141,12 @@ contract MockCToken is ERC20, ApeTokenInterface {
             return 1; // Return non-zero to simulate graceful failure.
         }
 
-        if (redeemTokens != 0) {
+        if (redeemAmount != 0) {
             uint256 tokens = (redeemAmount * _exchangeRate) / 1e18;
-            _burn(redeemer, tokens);
+            _balance[redeemer] -= tokens;
             redeemer.transfer(redeemAmount);
         } else {
-            _burn(redeemer, redeemTokens);
+            _balance[redeemer] -= redeemTokens;
             uint256 amount = (redeemTokens * 1e18) / _exchangeRate;
             redeemer.transfer(amount);
         }
