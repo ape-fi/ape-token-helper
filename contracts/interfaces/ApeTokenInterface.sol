@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface CTokenInterface {
+interface ApeTokenInterface {
     function underlying() external view returns (address);
 
     function mint(address minter, uint256 mintAmount)

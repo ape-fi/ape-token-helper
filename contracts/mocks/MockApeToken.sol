@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/CTokenInterface.sol";
+import "../interfaces/ApeTokenInterface.sol";
 
-contract MockCToken is ERC20, CTokenInterface {
+contract MockCToken is ERC20, ApeTokenInterface {
     using SafeERC20 for IERC20;
 
     address private _underlying;
