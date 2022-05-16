@@ -130,6 +130,10 @@ contract ApeTokenHelper is Ownable {
     {
         address underlying = apeTokenRepay.underlying();
 
+        if (repayAmount == type(uint256).max) {
+            repayAmount = apeTokenRepay.borrowBalanceCurrent(msg.sender);
+        }
+
         // Get funds from user.
         IERC20(underlying).safeTransferFrom(
             msg.sender,

@@ -101,6 +101,15 @@ describe('ApeTokenHelper', async () => {
 
       expect(await token2.balanceOf(apeToken2.address)).to.eq(toWei('100'));
     });
+
+    it('repays successfully for max repay amount', async () => {
+      expect(await token2.balanceOf(apeToken2.address)).to.eq(toWei('99'));
+
+      await token2.approve(helper.address, borrowAmount);
+      await helper.repay(apeToken2.address, ethers.constants.MaxUint256);
+
+      expect(await token2.balanceOf(apeToken2.address)).to.eq(toWei('100'));
+    });
   });
 
   describe('repay and redeem', async () => {
