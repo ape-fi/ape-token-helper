@@ -25,20 +25,17 @@ contract MockApeToken is ApeTokenInterface {
         return _underlying;
     }
 
+    function borrowBalanceCurrent(address account) external returns (uint256) {
+        _borrowBalance[account] = _borrowBalance[account]; // Silence the compiler.
+        return _borrowBalance[account];
+    }
+
     function setExchangeRateStored(uint256 exchangeRate_) external {
         _exchangeRate = exchangeRate_;
     }
 
     function exchangeRateStored() external view returns (uint256) {
         return _exchangeRate;
-    }
-
-    function borrowBalanceStored(address account)
-        public
-        view
-        returns (uint256)
-    {
-        return _borrowBalance[account];
     }
 
     function balanceOf(address account) external view returns (uint256) {

@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 interface ApeTokenInterface {
     function underlying() external view returns (address);
 
+    function borrowBalanceCurrent(address account) external returns (uint256);
+
     function mint(address minter, uint256 mintAmount)
         external
         returns (uint256);
