@@ -74,7 +74,10 @@ contract ApeTokenHelper is Ownable {
         );
 
         // Mint.
-        IERC20(underlying).approve(address(apeTokenMint), mintAmount);
+        IERC20(underlying).safeIncreaseAllowance(
+            address(apeTokenMint),
+            mintAmount
+        );
         require(apeTokenMint.mint(msg.sender, mintAmount) == 0, "mint failed");
     }
 
@@ -142,7 +145,10 @@ contract ApeTokenHelper is Ownable {
         );
 
         // Repay.
-        IERC20(underlying).approve(address(apeTokenRepay), repayAmount);
+        IERC20(underlying).safeIncreaseAllowance(
+            address(apeTokenRepay),
+            repayAmount
+        );
         require(
             apeTokenRepay.repayBorrow(msg.sender, repayAmount) == 0,
             "repay failed"
